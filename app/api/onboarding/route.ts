@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       institutionalEmail,
     } = body;
 
-    // Server-side age validation
+    // Server-side birth date validation
     if (!dateOfBirth) {
       return NextResponse.json({ error: 'Date of birth is required' }, { status: 400 });
     }
@@ -41,20 +41,6 @@ export async function POST(request: Request) {
     const dob = new Date(dateOfBirth);
     if (isNaN(dob.getTime())) {
       return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
-    }
-
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const m = today.getMonth() - dob.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
-
-    if (age < 18) {
-      return NextResponse.json(
-        { error: 'You must be at least 18 years old to join Hinges' },
-        { status: 400 }
-      );
     }
 
     if (!displayName || !displayName.trim()) {
@@ -143,7 +129,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ success: true, redirect: '/discover' });
+    return NextResponse.json({ success: true, redirect: '/profile' });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to save profile' },

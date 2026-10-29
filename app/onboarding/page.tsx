@@ -329,7 +329,7 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      router.push('/discover');
+      router.push('/profile');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to finalize profile');
       setLoading(false);

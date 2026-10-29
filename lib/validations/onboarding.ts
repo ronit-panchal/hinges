@@ -8,18 +8,7 @@ export const basicInfoSchema = z.object({
     .trim(),
   dateOfBirth: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)')
-    .refine((val) => {
-      const dob = new Date(val);
-      if (isNaN(dob.getTime())) return false;
-      const today = new Date();
-      let age = today.getFullYear() - dob.getFullYear();
-      const m = today.getMonth() - dob.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-        age--;
-      }
-      return age >= 18;
-    }, 'You must be at least 18 years old to join Hinges'),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
   genderIdentity: z.string().min(1, 'Please select your gender identity'),
   heightCm: z.coerce
     .number()

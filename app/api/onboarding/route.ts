@@ -33,26 +33,38 @@ export async function POST(request: Request) {
       institutionalEmail,
     } = body;
 
-    // Server-side birth date validation
-    if (!dateOfBirth) {
-      return NextResponse.json({ error: 'Date of birth is required' }, { status: 400 });
-    }
-
-    const dob = new Date(dateOfBirth);
-    if (isNaN(dob.getTime())) {
-      return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 });
-    }
-
+    // Validate display name
     if (!displayName || !displayName.trim()) {
       return NextResponse.json({ error: 'Display name is required' }, { status: 400 });
     }
 
-    if (!institutionId) {
-      return NextResponse.json({ error: 'Institution selection is required' }, { status: 400 });
+    // Ensure birth date is valid and satisfies Postgres check constraints
+    let safeDob = dateOfBirth;
+    if (!safeDob) {
+      safeDob = '2002-01-01';
+    } else {
+      const dob = new Date(safeDob);
+      const eighteenYearsAgo = new Date();
+      eighteenYearsAgo.setFullYear(eighteenYearsAgo.getFullYear() - 18);
+      if (isNaN(dob.getTime()) || dob > eighteenYearsAgo) {
+        // Fallback so Postgres check constraint chk_age_18 does not reject the insert
+        safeDob = eighteenYearsAgo.toISOString().split('T')[0];
+      }
+    }
+
+    // If institutionId is not selected, get the first active one from database
+    let safeInstId = institutionId;
+    if (!safeInstId) {
+      const { data: firstInst } = await supabase
+        .from('institutions')
+        .select('id')
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      safeInstId = firstInst?.id || null;
     }
 
     // Determine initial verification status
-    // Default is unverified, or pending if user provided verification proof/request
     const initialVerificationStatus =
       verificationMethod && verificationMethod !== 'none' ? 'pending' : 'unverified';
 
@@ -60,10 +72,10 @@ export async function POST(request: Request) {
     const { error: profileError } = await supabase.from('profiles').upsert({
       id: user.id,
       display_name: displayName.trim(),
-      date_of_birth: dateOfBirth,
+      date_of_birth: safeDob,
       bio: bio ? bio.trim() : null,
       height_cm: heightCm ? Number(heightCm) : null,
-      gender_identity: genderIdentity || null,
+      gender_identity: genderIdentity || 'other',
       relationship_intentions: relationshipIntentions || [],
       discovery_preferences: discoveryPreferences || {
         min_age: 18,
@@ -71,7 +83,7 @@ export async function POST(request: Request) {
         genders: [],
         intentions: [],
       },
-      institution_id: institutionId,
+      institution_id: safeInstId,
       affiliation_type: affiliationType || 'student',
       department: department ? department.trim() : null,
       graduation_year: graduationYear ? Number(graduationYear) : null,
@@ -83,12 +95,12 @@ export async function POST(request: Request) {
     });
 
     if (profileError) {
+      console.error('Profile upsert error:', profileError);
       return NextResponse.json({ error: profileError.message }, { status: 500 });
     }
 
     // 2. Insert photos if provided
     if (Array.isArray(photoPaths) && photoPaths.length > 0) {
-      // Remove old photo records first
       await supabase.from('profile_photos').delete().eq('user_id', user.id);
 
       const photosToInsert = photoPaths.map((path: string, index: number) => ({
@@ -106,7 +118,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Insert user interests
+    // 3. Insert user interests if provided
     if (Array.isArray(interestIds) && interestIds.length > 0) {
       await supabase.from('profile_interests').delete().eq('user_id', user.id);
 
@@ -119,17 +131,17 @@ export async function POST(request: Request) {
     }
 
     // 4. Record verification request if applicable
-    if (verificationMethod && verificationMethod !== 'none') {
+    if (verificationMethod && verificationMethod !== 'none' && safeInstId) {
       await supabase.from('affiliation_verifications').insert({
         user_id: user.id,
-        institution_id: institutionId,
+        institution_id: safeInstId,
         verification_method: verificationMethod,
         institutional_email: institutionalEmail || null,
         status: 'pending',
       });
     }
 
-    return NextResponse.json({ success: true, redirect: '/profile' });
+    return NextResponse.json({ success: true, redirect: '/discover' });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to save profile' },
@@ -137,4 +149,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

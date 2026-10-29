@@ -57,7 +57,9 @@ function DiscoverContent() {
 
       if (res.ok) {
         setCandidates(data.candidates || []);
-        if (data.candidates?.length > 0 && data.candidates[0].institution) {
+        if (data.institutionName) {
+          setInstitutionName(data.institutionName);
+        } else if (data.candidates?.length > 0 && data.candidates[0].institution) {
           setInstitutionName(data.candidates[0].institution.name);
         }
         setCurrentIndex(0);
@@ -258,34 +260,34 @@ function DiscoverContent() {
             disabled={actionPending}
           />
         ) : (
-          /* TRUTHFUL EMPTY STATE - NO FAKE PROFILES */
+          /* EMPTY STATE */
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
               <CheckCircle2 size={32} />
             </div>
-            <h2 className={styles.emptyTitle}>You&apos;re all caught up!</h2>
+            <h2 className={styles.emptyTitle}>You&apos;re all set!</h2>
             <p className={styles.emptyDescription}>
-              No compatible profiles are available in your institution right now. Hinges never fabricates mock profiles or crowds your feed with irrelevant users.
+              You&apos;ve completed onboarding. There are no other member profiles in your campus feed yet — as more students from your university join, they will appear here to match and chat.
             </p>
             <div className={styles.emptyActions}>
+              <Link href="/profile" style={{ width: '100%' }}>
+                <Button variant="primary" size="md" fullWidth icon={<Sparkles size={16} />}>
+                  View &amp; Edit My Profile
+                </Button>
+              </Link>
+              <Link href="/explore" style={{ width: '100%' }}>
+                <Button variant="outline" size="md" fullWidth icon={<Compass size={16} />}>
+                  Explore Other Institutions
+                </Button>
+              </Link>
               <Button
-                variant="outline"
-                size="md"
+                variant="ghost"
+                size="sm"
                 onClick={fetchCandidates}
                 icon={<RotateCcw size={16} />}
               >
-                Refresh campus feed
+                Refresh Campus Feed
               </Button>
-              <Link href="/explore">
-                <Button
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  icon={<Compass size={16} />}
-                >
-                  Explore other institutions
-                </Button>
-              </Link>
             </div>
           </div>
         )}

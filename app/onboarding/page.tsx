@@ -329,10 +329,12 @@ export default function OnboardingPage() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      router.push('/profile');
+      // Full navigation to ensure session and middleware pick up onboarding_completed state
+      window.location.href = '/discover';
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to finalize profile');
       setLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

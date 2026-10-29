@@ -1,0 +1,41 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.785rem;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  line-height: 1.2;
+}
+
+.verified {
+  background-color: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(46, 125, 50, 0.25);
+}
+
+.pending {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(237, 108, 2, 0.25);
+}
+
+.unverified {
+  background-color: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.institution {
+  background-color: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.neutral {
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+

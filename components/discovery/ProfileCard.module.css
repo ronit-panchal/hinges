@@ -1,0 +1,241 @@
+.cardWrapper {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: var(--radius-xl);
+  background-color: var(--bg-surface);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+.photoContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3.8 / 5;
+  background-color: var(--bg-subtle);
+  cursor: pointer;
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoIndicators {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.35rem;
+  z-index: 10;
+}
+
+.indicatorBar {
+  flex: 1;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-full);
+  transition: background-color var(--transition-fast);
+}
+
+.indicatorBar.active {
+  background-color: #ffffff;
+}
+
+.photoTapZoneLeft {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 40%;
+  z-index: 5;
+}
+
+.photoTapZoneRight {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40%;
+  z-index: 5;
+}
+
+.photoOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 3rem 1.5rem 1.25rem;
+  background: linear-gradient(to top, rgba(28, 25, 23, 0.9) 0%, rgba(28, 25, 23, 0) 100%);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.displayName {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.age {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.institutionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.topBadgeRow {
+  position: absolute;
+  top: 1.75rem;
+  left: 1rem;
+  display: flex;
+  gap: 0.4rem;
+  z-index: 10;
+}
+
+.menuButton {
+  position: absolute;
+  top: 1.75rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 15;
+  transition: background-color var(--transition-fast);
+}
+
+.menuButton:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.contentSection {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background-color: var(--bg-surface);
+}
+
+.bioBlock {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-style: italic;
+  position: relative;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--accent);
+}
+
+.detailsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.detailPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem 1.75rem;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.actionButton {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface);
+}
+
+.actionButton:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.passButton {
+  color: var(--text-muted);
+}
+.passButton:hover:not(:disabled) {
+  border-color: #ef4444;
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.superLikeButton {
+  width: 48px;
+  height: 48px;
+  color: #0284c7;
+}
+.superLikeButton:hover:not(:disabled) {
+  border-color: #0284c7;
+  color: #0284c7;
+  background-color: #f0f9ff;
+}
+
+.likeButton {
+  width: 64px;
+  height: 64px;
+  color: var(--accent);
+  background-color: var(--accent-light);
+  border-color: var(--accent-border);
+}
+.likeButton:hover:not(:disabled) {
+  background-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(217, 83, 56, 0.35);
+}
+

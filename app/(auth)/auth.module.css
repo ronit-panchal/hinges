@@ -1,0 +1,137 @@
+.pageWrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-canvas);
+}
+
+.container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 440px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.logoHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.logoMark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, #b83d25 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.4rem;
+  font-family: var(--font-serif);
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(217, 83, 56, 0.25);
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.errorMessage {
+  padding: 0.75rem 1rem;
+  background-color: var(--danger-bg);
+  border: 1px solid rgba(211, 47, 47, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.googleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background-color: #FFFFFF;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1C1917;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+}
+
+.googleButton:hover:not(:disabled) {
+  background-color: #FAF7F2;
+  border-color: #1C1917;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.googleButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.googleIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.disclaimer a {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.switchLink {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.switchLink a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.switchLink a:hover {
+  text-decoration: underline;
+}
+

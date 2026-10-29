@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-project.supabase.co';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://cutmokgbycvlmotrtubu.supabase.co';
   const supabaseAnonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your-supabase-anon-key'
       ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -56,6 +56,7 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Fast session refresh
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -72,7 +73,7 @@ export async function updateSession(request: NextRequest) {
     '/admin',
   ].some((prefix) => path.startsWith(prefix));
 
-  // If trying to access protected route without user session
+  // If trying to access protected route without user session, redirect to home
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
@@ -80,49 +81,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If logged in, check onboarding completion when accessing protected app
-  if (user && isProtectedPath) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_completed, is_admin, is_suspended')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.is_suspended) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'account_suspended');
-      return NextResponse.redirect(url);
-    }
-
-    if (!profile || !profile.onboarding_completed) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/onboarding';
-      return NextResponse.redirect(url);
-    }
-
-    if (path.startsWith('/admin') && !profile.is_admin) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/discover';
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // If user is already completed and tries to visit the home / auth pages, send them to profile
-  if (user && (path === '/' || path === '/login' || path === '/signup')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.onboarding_completed) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/profile';
-      return NextResponse.redirect(url);
-    }
+  // If user is already authenticated and visits login/signup, route to discover
+  if (user && (path === '/login' || path === '/signup')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/discover';
+    return NextResponse.redirect(url);
   }
 
   return response;
 }
-

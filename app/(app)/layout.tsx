@@ -15,47 +15,49 @@ export default async function AuthenticatedLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect('/');
   }
 
-  // Fetch current user's minimal profile info for navigation
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, onboarding_completed, is_admin, is_suspended')
-    .eq('id', user.id)
-    .single();
+  // Parallel fetch: profile, likes count, matches count (eliminates waterfall)
+  const [profileRes, likesRes, matchesRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, onboarding_completed, is_admin, is_suspended')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('likes')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient_id', user.id)
+      .in('action_type', ['like', 'super_like']),
+    supabase
+      .from('matches')
+      .select('id', { count: 'exact', head: true })
+      .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
+      .eq('status', 'active'),
+  ]);
+
+  const profile = profileRes.data;
 
   if (profile?.is_suspended) {
-    redirect('/login?error=account_suspended');
+    redirect('/?error=account_suspended');
   }
 
   if (!profile || !profile.onboarding_completed) {
     redirect('/onboarding');
   }
 
-  // Count incoming unviewed likes
-  const { count: likesCount } = await supabase
-    .from('likes')
-    .select('id', { count: 'exact', head: true })
-    .eq('recipient_id', user.id)
-    .in('action_type', ['like', 'super_like']);
-
-  // Count active matches
-  const { count: matchesCount } = await supabase
-    .from('matches')
-    .select('id', { count: 'exact', head: true })
-    .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
-    .eq('status', 'active');
+  const likesCount = likesRes.count || 0;
+  const matchesCount = matchesRes.count || 0;
 
   return (
     <div className={styles.appContainer}>
       <AppNavigation
         isAdmin={Boolean(profile?.is_admin)}
-        likesCount={likesCount || 0}
-        matchesCount={matchesCount || 0}
+        likesCount={likesCount}
+        matchesCount={matchesCount}
       />
       <main className={styles.mainContent}>{children}</main>
     </div>
   );
 }
-

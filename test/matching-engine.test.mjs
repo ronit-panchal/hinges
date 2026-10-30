@@ -189,3 +189,4 @@ runTest('Scenario I: Users mapped to same canonical institution ID match despite
 console.log(`\n======================================================`);
 console.log(`Test Execution Finished: ${passedTests}/${totalTests} Passed (${Math.round((passedTests / totalTests) * 100)}% Success)`);
 console.log(`======================================================\n`);
+

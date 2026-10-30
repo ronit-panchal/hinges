@@ -60,3 +60,4 @@ async function testMutualDiscovery() {
 }
 
 testMutualDiscovery().catch(console.error);
+

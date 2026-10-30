@@ -30,12 +30,12 @@ export async function GET(request: Request) {
         }
 
         if (profile?.onboarding_completed) {
-          // Existing user — go to profile
-          return NextResponse.redirect(new URL('/profile', requestUrl.origin));
+          // Existing user — go to discover (main app feed)
+          return NextResponse.redirect(new URL('/discover', requestUrl.origin));
         } else {
-          // New user — go to onboarding (or the ?next= param if explicitly set)
+          // New user — go to onboarding
           return NextResponse.redirect(
-            new URL(next === '/profile' ? '/onboarding' : next, requestUrl.origin)
+            new URL(next === '/profile' || next === '/discover' ? '/onboarding' : next, requestUrl.origin)
           );
         }
       }

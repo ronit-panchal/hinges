@@ -45,9 +45,9 @@ interface CommunityPost {
 
 const CATEGORIES = [
   { value: 'all', label: 'All Topics' },
-  { value: 'confession', label: '🤫 Confessions' },
-  { value: 'gossip', label: '☕ Campus Scoop' },
-  { value: 'question', label: '💡 Questions & Advice' },
+  { value: 'confessions', label: '🤫 Confessions' },
+  { value: 'campus_gossip', label: '☕ Campus Scoop' },
+  { value: 'questions', label: '💡 Questions & Advice' },
   { value: 'funny', label: '😂 Funny Moments' },
   { value: 'social', label: '🎉 Social & Events' },
   { value: 'general', label: '💬 General' },
@@ -63,7 +63,7 @@ export default function CommunityPage() {
   // New Post Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newContent, setNewContent] = useState('');
-  const [newCategory, setNewCategory] = useState('confession');
+  const [newCategory, setNewCategory] = useState('confessions');
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -98,6 +98,8 @@ export default function CommunityPage() {
     fetchCampus();
   }, []);
 
+  const [setupRequired, setSetupRequired] = useState(false);
+
   // Fetch posts
   const loadPosts = useCallback(async () => {
     try {
@@ -112,6 +114,7 @@ export default function CommunityPage() {
       if (res.ok) {
         const data = await res.json();
         setPosts(data.posts || []);
+        if (data.setupRequired) setSetupRequired(true);
       }
     } catch (err) {
       console.error('Failed to fetch posts:', err);
@@ -543,9 +546,9 @@ export default function CommunityPage() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             options={[
-              { value: 'confession', label: '🤫 Confession' },
-              { value: 'gossip', label: '☕ Campus Scoop' },
-              { value: 'question', label: '💡 Question & Advice' },
+              { value: 'confessions', label: '🤫 Confession' },
+              { value: 'campus_gossip', label: '☕ Campus Scoop' },
+              { value: 'questions', label: '💡 Question & Advice' },
               { value: 'funny', label: '😂 Funny Moment' },
               { value: 'social', label: '🎉 Social & Events' },
               { value: 'general', label: '💬 General Conversation' },
@@ -620,3 +623,4 @@ export default function CommunityPage() {
     </div>
   );
 }
+

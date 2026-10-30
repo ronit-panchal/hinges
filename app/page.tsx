@@ -87,7 +87,7 @@ function HomeContent() {
             .single();
 
           if (profile?.onboarding_completed) {
-            router.push('/profile');
+            router.push('/discover');
           } else {
             router.push('/onboarding');
           }

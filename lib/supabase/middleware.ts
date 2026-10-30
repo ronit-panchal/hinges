@@ -68,6 +68,7 @@ export async function updateSession(request: NextRequest) {
     '/matches',
     '/messages',
     '/explore',
+    '/community',
     '/profile',
     '/settings',
     '/admin',

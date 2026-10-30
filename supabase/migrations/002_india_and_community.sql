@@ -620,3 +620,4 @@ CREATE POLICY "Admins can update community reports"
     TO authenticated
     USING (is_current_user_admin())
     WITH CHECK (is_current_user_admin());
+

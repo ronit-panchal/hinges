@@ -36,6 +36,20 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Guard: return empty gracefully if tables don't exist yet
+    const { error: tableCheckErr } = await supabase
+      .from('community_posts')
+      .select('id')
+      .limit(0);
+
+    if (tableCheckErr && tableCheckErr.code === 'PGRST205') {
+      return NextResponse.json({
+        posts: [],
+        institutionName: (profile.institution as any)?.name || 'Campus Community',
+        setupRequired: true,
+      });
+    }
+
     let query = supabase
       .from('community_posts')
       .select(`
@@ -207,9 +221,22 @@ export async function POST(request: Request) {
       'general',
       'experiences',
       'social',
+      // Also accept frontend short-form values and remap them
+      'confession',
+      'gossip',
+      'question',
     ];
 
-    if (!category || !validCategories.includes(category)) {
+    // Remap short-form to DB canonical values
+    const categoryAliasMap: Record<string, string> = {
+      confession: 'confessions',
+      gossip: 'campus_gossip',
+      question: 'questions',
+    };
+
+    const resolvedCategory = categoryAliasMap[category] || category;
+
+    if (!resolvedCategory || !validCategories.includes(category)) {
       return NextResponse.json({ error: 'Invalid post category' }, { status: 400 });
     }
 
@@ -218,7 +245,7 @@ export async function POST(request: Request) {
       .insert({
         institution_id: profile.institution_id,
         author_id: user.id,
-        category,
+        category: resolvedCategory,
         content: validation.sanitizedContent,
         is_anonymous: isAnonymous ?? true,
         content_warning: contentWarning?.trim() || null,
@@ -303,3 +330,4 @@ export async function DELETE(request: Request) {
     );
   }
 }
+

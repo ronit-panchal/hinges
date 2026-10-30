@@ -141,6 +141,11 @@ export default function OnboardingPage() {
       setError('Please enter your date of birth.');
       return false;
     }
+    const age = calculateAge(dateOfBirth);
+    if (age < 18) {
+      setError('Hinges is strictly for adults (18+). You must be at least 18 years old to join.');
+      return false;
+    }
     if (!genderIdentity) {
       setError('Please select your gender identity.');
       return false;

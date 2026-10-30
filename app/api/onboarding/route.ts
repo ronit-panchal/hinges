@@ -1,8 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   const supabase = await createClient();
+  const adminClient = createAdminClient();
+  const dbClient = adminClient || supabase;
 
   const {
     data: { user },
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
     // If institutionId is not selected, get the first active one from database
     let safeInstId = institutionId;
     if (!safeInstId) {
-      const { data: firstInst } = await supabase
+      const { data: firstInst } = await dbClient
         .from('institutions')
         .select('id')
         .eq('is_active', true)
@@ -69,7 +72,7 @@ export async function POST(request: Request) {
       verificationMethod && verificationMethod !== 'none' ? 'pending' : 'unverified';
 
     // 1. Upsert profile record
-    const { error: profileError } = await supabase.from('profiles').upsert({
+    const { error: profileError } = await dbClient.from('profiles').upsert({
       id: user.id,
       display_name: displayName.trim(),
       date_of_birth: safeDob,
@@ -101,7 +104,7 @@ export async function POST(request: Request) {
 
     // 2. Insert photos if provided
     if (Array.isArray(photoPaths) && photoPaths.length > 0) {
-      await supabase.from('profile_photos').delete().eq('user_id', user.id);
+      await dbClient.from('profile_photos').delete().eq('user_id', user.id);
 
       const photosToInsert = photoPaths.map((path: string, index: number) => ({
         user_id: user.id,
@@ -109,7 +112,7 @@ export async function POST(request: Request) {
         display_order: index,
       }));
 
-      const { error: photosError } = await supabase
+      const { error: photosError } = await dbClient
         .from('profile_photos')
         .insert(photosToInsert);
 
@@ -120,19 +123,19 @@ export async function POST(request: Request) {
 
     // 3. Insert user interests if provided
     if (Array.isArray(interestIds) && interestIds.length > 0) {
-      await supabase.from('profile_interests').delete().eq('user_id', user.id);
+      await dbClient.from('profile_interests').delete().eq('user_id', user.id);
 
       const interestsToInsert = interestIds.map((interestId: string) => ({
         user_id: user.id,
         interest_id: interestId,
       }));
 
-      await supabase.from('profile_interests').insert(interestsToInsert);
+      await dbClient.from('profile_interests').insert(interestsToInsert);
     }
 
     // 4. Record verification request if applicable
     if (verificationMethod && verificationMethod !== 'none' && safeInstId) {
-      await supabase.from('affiliation_verifications').insert({
+      await dbClient.from('affiliation_verifications').insert({
         user_id: user.id,
         institution_id: safeInstId,
         verification_method: verificationMethod,

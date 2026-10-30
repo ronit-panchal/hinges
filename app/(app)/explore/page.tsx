@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Building2, MapPin, ArrowRight, Compass } from 'lucide-react';
+import { Search, Building2, MapPin, ArrowRight, Compass, Users } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -102,11 +102,19 @@ export default function ExplorePage() {
                 <div className={styles.instMeta}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                     <MapPin size={14} />
-                    <span>{inst.city}, {inst.country}</span>
+                    <span>{inst.city}, India</span>
                   </span>
                   <Badge variant="neutral">
                     {inst.institution_type.charAt(0).toUpperCase() + inst.institution_type.slice(1)}
                   </Badge>
+                  {(inst as { memberCount?: number }).memberCount !== undefined && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.78rem', color: 'var(--accent)', fontWeight: 500 }}>
+                      <Users size={13} />
+                      {(inst as { memberCount?: number }).memberCount! > 0
+                        ? `${(inst as { memberCount?: number }).memberCount} active`
+                        : 'New campus'}
+                    </span>
+                  )}
                 </div>
               </div>
 

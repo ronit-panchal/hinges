@@ -8,10 +8,29 @@ import {
   Check,
   X,
   UserX,
+  Activity,
+  Users,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import styles from './admin.module.css';
+
+interface DiagnosticsData {
+  totalRegisteredUsers: number;
+  completedProfiles: number;
+  eligibleAdultProfiles: number;
+  profilesWithInstitution: number;
+  verifiedProfiles: number;
+  discoverableProfiles: number;
+  sameInstitutionCandidates: number;
+  excludedByPreferences: number;
+  excludedByBlocks: number;
+  excludedAlreadySwiped: number;
+  finalEligibleCandidates: number;
+  exclusionReasonsBreakdown: Record<string, number>;
+}
 
 export default function AdminPage() {
   const [data, setData] = useState<{
@@ -24,15 +43,37 @@ export default function AdminPage() {
     reports: [],
   });
 
+  const [diagnostics, setDiagnostics] = useState<DiagnosticsData | null>(null);
+  const [diagnosticsViewer, setDiagnosticsViewer] = useState<{ display_name: string; institution_name: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshingDiagnostics, setRefreshingDiagnostics] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  const loadDiagnostics = async () => {
+    try {
+      setRefreshingDiagnostics(true);
+      const res = await fetch('/api/admin/diagnostics');
+      if (res.ok) {
+        const json = await res.json();
+        setDiagnostics(json.diagnostics);
+        setDiagnosticsViewer(json.viewer);
+      }
+    } catch (err) {
+      console.error('Failed to load diagnostics:', err);
+    } finally {
+      setRefreshingDiagnostics(false);
+    }
+  };
 
   const loadAdminData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin');
-      if (res.ok) {
-        const json = await res.json();
+      const [adminRes] = await Promise.all([
+        fetch('/api/admin'),
+        loadDiagnostics(),
+      ]);
+      if (adminRes.ok) {
+        const json = await adminRes.json();
         setData(json);
       }
     } catch (err) {
@@ -134,9 +175,80 @@ export default function AdminPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Administration & Trust</h1>
         <p className={styles.subtitle}>
-          Restricted workflow for reviewing affiliation verification evidence, directory additions, and safety reports.
+          Restricted workflow for monitoring matching engine health, reviewing affiliation verifications, directory requests, and safety reports.
         </p>
       </div>
+
+      {/* 0. Matching Engine Diagnostics */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionTitle}>
+            <Activity size={20} color="var(--accent)" />
+            <span>Matching Engine &amp; Discovery Diagnostics</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadDiagnostics}
+            disabled={refreshingDiagnostics}
+            icon={<RefreshCw size={14} className={refreshingDiagnostics ? 'animate-spin' : ''} />}
+          >
+            {refreshingDiagnostics ? 'Refreshing...' : 'Refresh Health'}
+          </Button>
+        </div>
+
+        {diagnostics && (
+          <>
+            {diagnosticsViewer && (
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Viewing perspective of: <strong>{diagnosticsViewer.display_name}</strong> ({diagnosticsViewer.institution_name})
+              </div>
+            )}
+
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Registered Users</span>
+                <span className={styles.statValue}>{diagnostics.totalRegisteredUsers}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Completed Profiles</span>
+                <span className={styles.statValue}>{diagnostics.completedProfiles}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Eligible Adults (18+)</span>
+                <span className={styles.statValue}>{diagnostics.eligibleAdultProfiles}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>With Institution</span>
+                <span className={styles.statValue}>{diagnostics.profilesWithInstitution}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Same Campus Candidates</span>
+                <span className={styles.statValue}>{diagnostics.sameInstitutionCandidates}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Final Feed Candidates</span>
+                <span className={[styles.statValue, styles.statHighlight].join(' ')}>
+                  {diagnostics.finalEligibleCandidates}
+                </span>
+              </div>
+            </div>
+
+            {Object.keys(diagnostics.exclusionReasonsBreakdown).length > 0 && (
+              <div className={styles.breakdownBox}>
+                <strong>Exclusion Reasons Breakdown:</strong>
+                <ul className={styles.breakdownList}>
+                  {Object.entries(diagnostics.exclusionReasonsBreakdown).map(([reason, count]) => (
+                    <li key={reason}>
+                      {reason}: <strong>{count}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </section>
 
       {/* 1. Affiliation Verifications */}
       <section className={styles.section}>
@@ -298,4 +410,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

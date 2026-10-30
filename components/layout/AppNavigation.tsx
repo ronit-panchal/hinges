@@ -7,6 +7,7 @@ import {
   Flame,
   Heart,
   MessageCircle,
+  MessageSquare,
   Compass,
   User,
   Settings,
@@ -38,6 +39,11 @@ export function AppNavigation({
       href: '/likes',
       icon: Heart,
       badge: likesCount > 0 ? likesCount : undefined,
+    },
+    {
+      name: 'Community',
+      href: '/community',
+      icon: MessageSquare,
     },
     {
       name: 'Matches',

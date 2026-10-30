@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import {
+  rankCandidates,
+  CandidateProfile,
+  DEFAULT_LAUNCH_POLICY,
+} from '@/lib/services/matching';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -12,10 +17,31 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // 1. Fetch authenticated user's current institution & preferences
+  // 1. Fetch authenticated user's current profile & canonical institution
   const { data: currentUserProfile, error: profileErr } = await supabase
     .from('profiles')
-    .select('id, institution_id, discovery_preferences, onboarding_completed, is_suspended, institution:institutions(name)')
+    .select(`
+      id,
+      display_name,
+      date_of_birth,
+      bio,
+      height_cm,
+      gender_identity,
+      relationship_intentions,
+      discovery_preferences,
+      institution_id,
+      affiliation_type,
+      department,
+      graduation_year,
+      city,
+      verification_status,
+      is_discoverable,
+      onboarding_completed,
+      is_suspended,
+      created_at,
+      institution:institutions(id, name, city, country),
+      interests:profile_interests(interest:interests(id, name, category))
+    `)
     .eq('id', user.id)
     .single();
 
@@ -33,7 +59,20 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const exploreInstitutionId = searchParams.get('exploreInstitutionId');
-  const targetInstitutionId = exploreInstitutionId || currentUserProfile.institution_id;
+
+  // Enforce institution boundary:
+  // Default is strictly the user's own canonical institution.
+  // Explore mode only when exploreInstitutionId is explicitly provided.
+  const isExploreMode = Boolean(exploreInstitutionId && exploreInstitutionId !== currentUserProfile.institution_id);
+  const targetInstitutionId = isExploreMode ? exploreInstitutionId! : currentUserProfile.institution_id;
+
+  if (!targetInstitutionId) {
+    return NextResponse.json({
+      candidates: [],
+      institutionName: 'No Institution Selected',
+      isExplore: false,
+    });
+  }
 
   // 2. Retrieve IDs of already-swiped profiles (likes table)
   const { data: swipedLikes } = await supabase
@@ -41,7 +80,7 @@ export async function GET(request: Request) {
     .select('recipient_id')
     .eq('actor_id', user.id);
 
-  const swipedIds = swipedLikes?.map((l) => l.recipient_id) || [];
+  const swipedIds = new Set((swipedLikes || []).map((l) => l.recipient_id));
 
   // 3. Retrieve IDs of blocked users (both directions)
   const { data: userBlocks } = await supabase
@@ -54,18 +93,13 @@ export async function GET(request: Request) {
     .select('blocker_id')
     .eq('blocked_id', user.id);
 
-  const blockedIds = [
-    ...(userBlocks?.map((b) => b.blocked_id) || []),
-    ...(blockedByUsers?.map((b) => b.blocker_id) || []),
-  ];
-
-  const excludedIds = Array.from(new Set([user.id, ...swipedIds, ...blockedIds]));
+  const blockedIds = new Set([
+    ...(userBlocks || []).map((b) => b.blocked_id),
+    ...(blockedByUsers || []).map((b) => b.blocker_id),
+  ]);
 
   // 4. Query candidate profiles belonging to the target institution
-  let candidates: any[] = [];
-  let isCrossCampus = false;
-
-  let query = supabase
+  const { data: rawCandidates, error: queryErr } = await supabase
     .from('profiles')
     .select(`
       id,
@@ -75,94 +109,78 @@ export async function GET(request: Request) {
       height_cm,
       gender_identity,
       relationship_intentions,
+      discovery_preferences,
+      institution_id,
       affiliation_type,
       department,
       graduation_year,
       city,
       verification_status,
       is_discoverable,
+      onboarding_completed,
+      is_suspended,
       created_at,
       institution:institutions(id, name, city, country),
       photos:profile_photos(id, storage_path, display_order),
       interests:profile_interests(interest:interests(id, name, category))
     `)
+    .eq('institution_id', targetInstitutionId)
     .eq('is_discoverable', true)
     .eq('is_suspended', false)
     .eq('onboarding_completed', true)
-    .limit(20);
-
-  if (targetInstitutionId) {
-    query = query.eq('institution_id', targetInstitutionId);
-  }
-
-  if (excludedIds.length > 0) {
-    query = query.not('id', 'in', `(${excludedIds.join(',')})`);
-  }
-
-  const { data: fetchedCandidates, error: queryErr } = await query;
+    .not('id', 'eq', user.id)
+    .limit(50);
 
   if (queryErr) {
-    console.error('Feed query error:', queryErr);
-  } else if (fetchedCandidates && fetchedCandidates.length > 0) {
-    candidates = fetchedCandidates;
+    console.error('Candidate query error:', queryErr);
+    return NextResponse.json({ error: queryErr.message }, { status: 500 });
   }
 
-  // Fallback: If no peers in specific campus, search across other partner campuses
-  if (candidates.length === 0 && targetInstitutionId && !exploreInstitutionId) {
-    let wideQuery = supabase
-      .from('profiles')
-      .select(`
-        id,
-        display_name,
-        date_of_birth,
-        bio,
-        height_cm,
-        gender_identity,
-        relationship_intentions,
-        affiliation_type,
-        department,
-        graduation_year,
-        city,
-        verification_status,
-        is_discoverable,
-        created_at,
-        institution:institutions(id, name, city, country),
-        photos:profile_photos(id, storage_path, display_order),
-        interests:profile_interests(interest:interests(id, name, category))
-      `)
-      .eq('is_discoverable', true)
-      .eq('is_suspended', false)
-      .eq('onboarding_completed', true)
-      .limit(20);
-
-    if (excludedIds.length > 0) {
-      wideQuery = wideQuery.not('id', 'in', `(${excludedIds.join(',')})`);
-    }
-
-    const { data: wideData } = await wideQuery;
-    if (wideData && wideData.length > 0) {
-      candidates = wideData;
-      isCrossCampus = true;
-    }
-  }
-
-  // Format candidates
-  const formattedCandidates = candidates.map((cand: any) => ({
+  // Format candidate data
+  const formattedCandidates: CandidateProfile[] = (rawCandidates || []).map((cand: any) => ({
     ...cand,
-    photos: (cand.photos || []).sort((a: any, b: any) => a.display_order - b.display_order),
+    photos: (cand.photos || []).sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
     interests: (cand.interests || [])
       .map((i: any) => i.interest || i.interests)
       .filter(Boolean),
   }));
 
-  const instName =
-    (currentUserProfile.institution as any)?.name || 'Campus Feed';
+  // Format viewer profile for engine
+  const viewerProfile: CandidateProfile = {
+    ...currentUserProfile,
+    interests: (currentUserProfile.interests || [])
+      .map((i: any) => i.interest || i.interests)
+      .filter(Boolean),
+  } as unknown as CandidateProfile;
+
+  // 5. Run matching eligibility and ranking engine
+  const { eligible: rankedCandidates, diagnostics } = rankCandidates(
+    viewerProfile,
+    formattedCandidates,
+    targetInstitutionId,
+    swipedIds,
+    blockedIds,
+    DEFAULT_LAUNCH_POLICY
+  );
+
+  // 6. Fetch institution name for display
+  let currentInstitutionName = (currentUserProfile.institution as any)?.name || 'Campus Feed';
+  if (isExploreMode) {
+    const { data: exploreInst } = await supabase
+      .from('institutions')
+      .select('name')
+      .eq('id', targetInstitutionId)
+      .single();
+    if (exploreInst) {
+      currentInstitutionName = exploreInst.name;
+    }
+  }
 
   return NextResponse.json({
-    candidates: formattedCandidates,
+    candidates: rankedCandidates,
     institutionId: targetInstitutionId,
-    institutionName: instName,
-    isExplore: Boolean(exploreInstitutionId) || isCrossCampus,
-    currentUser: currentUserProfile,
+    institutionName: currentInstitutionName,
+    isExplore: isExploreMode,
+    diagnostics,
   });
 }
